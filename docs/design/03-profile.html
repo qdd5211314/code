@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户管理系统 - 个人中心</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; color: rgba(0,0,0,.85); background: #f0f2f5; min-height: 100vh; }
+
+  /* ========== 左侧导航 ========== */
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: #001529; z-index: 100; display: flex; flex-direction: column; }
+  .sidebar-logo { height: 48px; display: flex; align-items: center; padding: 0 16px; gap: 10px; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .sidebar-logo .icon { width: 28px; height: 28px; border-radius: 6px; background: linear-gradient(135deg, #1890ff, #36cfc9); display: flex; align-items: center; justify-content: center; }
+  .sidebar-logo .icon svg { width: 18px; height: 18px; fill: #fff; }
+  .sidebar-logo .text { color: #fff; font-size: 16px; font-weight: 600; letter-spacing: .5px; }
+  .sidebar-menu { flex: 1; padding: 8px 0; overflow-y: auto; }
+  .menu-group-title { color: rgba(255,255,255,.35); font-size: 12px; padding: 16px 16px 4px; text-transform: uppercase; letter-spacing: 1px; }
+  .menu-item { display: flex; align-items: center; padding: 0 16px; height: 40px; color: rgba(255,255,255,.65); cursor: pointer; gap: 10px; font-size: 14px; transition: all .2s; text-decoration: none; }
+  .menu-item:hover { color: #fff; background: rgba(255,255,255,.06); }
+  .menu-item.active { color: #fff; background: #1890ff; border-radius: 4px; margin: 0 8px; padding: 0 8px; }
+  .menu-item svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
+  .menu-item .arrow { margin-left: auto; width: 12px; height: 12px; transition: transform .2s; }
+  .menu-item .arrow.open { transform: rotate(90deg); }
+  .menu-sub { display: none; }
+  .menu-sub.open { display: block; }
+  .menu-sub .menu-item { padding-left: 42px; font-size: 13px; }
+  .menu-sub .menu-item.active { margin-left: 8px; padding-left: 34px; }
+
+  /* ========== 主体区域 ========== */
+  .main { margin-left: 220px; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* 顶部栏 */
+  .topbar { height: 48px; background: #fff; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 50; }
+  .topbar-left { display: flex; align-items: center; gap: 8px; }
+  .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 14px; color: rgba(0,0,0,.45); }
+  .breadcrumb span { color: rgba(0,0,0,.85); font-weight: 500; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .topbar-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; color: rgba(0,0,0,.65); position: relative; transition: background .2s; }
+  .topbar-icon:hover { background: #f5f5f5; }
+  .topbar-icon svg { width: 18px; height: 18px; fill: currentColor; }
+  .badge { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: #ff4d4f; border: 1px solid #fff; }
+  .avatar-group { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background .2s; }
+  .avatar-group:hover { background: #f5f5f5; }
+  .avatar-group img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+  .avatar-group .name { font-size: 14px; color: rgba(0,0,0,.85); }
+
+  /* 内容区 */
+  .content { flex: 1; padding: 24px; }
+  .page-title { font-size: 20px; font-weight: 600; margin-bottom: 24px; color: rgba(0,0,0,.85); }
+
+  /* 卡片 */
+  .card { background: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.06); margin-bottom: 24px; }
+  .card-header { padding: 16px 24px; border-bottom: 1px solid #f0f0f0; }
+  .card-title { font-size: 16px; font-weight: 600; color: rgba(0,0,0,.85); }
+  .card-body { padding: 24px; }
+
+  /* ========== 个人信息区 ========== */
+  .profile-section { display: grid; grid-template-columns: 280px 1fr; gap: 32px; }
+  .profile-left { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .profile-avatar { width: 96px; height: 96px; border-radius: 50%; margin-bottom: 16px; overflow: hidden; border: 3px solid #f0f0f0; }
+  .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-name { font-size: 18px; font-weight: 600; color: rgba(0,0,0,.85); margin-bottom: 8px; }
+  .profile-role { display: inline-block; padding: 2px 12px; border-radius: 4px; font-size: 12px; background: #f0f5ff; color: #2f54eb; border: 1px solid #adc6ff; margin-bottom: 16px; }
+  .profile-joined { font-size: 13px; color: rgba(0,0,0,.45); }
+
+  /* 基本信息 */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 32px; }
+  .info-item { }
+  .info-label { font-size: 13px; color: rgba(0,0,0,.45); margin-bottom: 4px; }
+  .info-value { font-size: 14px; color: rgba(0,0,.85); font-weight: 500; }
+
+  /* ========== 修改密码区 ========== */
+  .password-form { max-width: 480px; }
+  .form-item { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 14px; color: rgba(0,0,0,.85); margin-bottom: 8px; }
+  .form-label .required { color: #ff4d4f; margin-right: 4px; }
+  .input { height: 36px; width: 100%; border: 1px solid #d9d9d9; border-radius: 4px; padding: 0 12px; font-size: 14px; color: rgba(0,0,0,.85); outline: none; transition: border .2s; background: #fff; }
+  .input:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,.1); }
+  .input::placeholder { color: #bfbfbf; }
+  .btn { height: 36px; padding: 0 24px; border-radius: 4px; font-size: 14px; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; transition: all .2s; }
+  .btn-primary { background: #1890ff; color: #fff; border-color: #1890ff; }
+  .btn-primary:hover { background: #40a9ff; border-color: #40a9ff; }
+
+  /* ========== 登录记录表格 ========== */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 12px 16px; font-size: 13px; font-weight: 500; color: rgba(0,0,0,.85); background: #fafafa; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+  td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+  tr:hover td { background: #fafafa; }
+  .tag-active { background: #f6ffed; color: #52c41a; }
+  .tag-failed { background: #fff1f0; color: #ff4d4f; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; line-height: 20px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+
+<!-- ========== 左侧导航 ========== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    <span class="text">用户管理系统</span>
+  </div>
+  <nav class="sidebar-menu">
+    <div class="menu-group-title">主菜单</div>
+    <a class="menu-item" href="#">
+      <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      仪表盘
+    </a>
+
+    <div class="menu-group-title">用户管理</div>
+    <a class="menu-item" onclick="toggleSub(this)">
+      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      用户管理
+      <svg class="arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+    </a>
+    <div class="menu-sub">
+      <a class="menu-item" href="#">用户列表</a>
+      <a class="menu-item" href="#">角色管理</a>
+    </div>
+
+    <div class="menu-group-title">系统管理</div>
+    <a class="menu-item" onclick="toggleSub(this)">
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg>
+      系统管理
+      <svg class="arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+    </a>
+    <div class="menu-sub">
+      <a class="menu-item" href="#">操作日志</a>
+      <a class="menu-item" href="#">系统设置</a>
+    </div>
+
+    <div class="menu-group-title">个人</div>
+    <a class="menu-item active" href="#">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      个人中心
+    </a>
+  </nav>
+</aside>
+
+<!-- ========== 主体 ========== -->
+<div class="main">
+  <!-- 顶部栏 -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">
+        个人 / <span>个人中心</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        <span class="badge"></span>
+      </div>
+      <div class="avatar-group">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Crect width='28' height='28' rx='14' fill='%231890ff'/%3E%3Ctext x='14' y='18' text-anchor='middle' font-size='14' fill='white'%3E管%3C/text%3E%3C/svg%3E" alt="头像">
+        <span class="name">管理员</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 内容区 -->
+  <div class="content">
+    <h1 class="page-title">个人中心</h1>
+
+    <!-- 个人信息区 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">个人信息</span>
+      </div>
+      <div class="card-body">
+        <div class="profile-section">
+          <!-- 左侧 -->
+          <div class="profile-left">
+            <div class="profile-avatar">
+              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='96' height='96' rx='48' fill='%231890ff'/%3E%3Ctext x='48' y='56' text-anchor='middle' font-size='36' fill='white'%3E管%3C/text%3E%3C/svg%3E" alt="头像">
+            </div>
+            <div class="profile-name">管总</div>
+            <div class="profile-role">超级管理员</div>
+            <div class="profile-joined">加入时间：2024-01-15</div>
+          </div>
+          <!-- 右侧基本信息 -->
+          <div>
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">昵称</div>
+                <div class="info-value">管总</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">手机号</div>
+                <div class="info-value">138****8888</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">邮箱</div>
+                <div class="info-value">guanzong@example.com</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">注册时间</div>
+                <div class="info-value">2024-01-15 09:00:00</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">部门</div>
+                <div class="info-value">项目管理部</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">最后登录</div>
+                <div class="info-value">2025-07-22 14:30:00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 修改密码区 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">修改密码</span>
+      </div>
+      <div class="card-body">
+        <div class="password-form">
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>旧密码</label>
+            <input type="password" class="input" placeholder="请输入旧密码">
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>新密码</label>
+            <input type="password" class="input" placeholder="请输入新密码（至少8位）">
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>确认新密码</label>
+            <input type="password" class="input" placeholder="请再次输入新密码">
+          </div>
+          <div style="margin-top: 8px">
+            <button class="btn btn-primary">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 登录记录区 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">登录记录</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>登录时间</th>
+              <th>IP 地址</th>
+              <th>城市</th>
+              <th>浏览器</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2025-07-22 14:30:00</td>
+              <td>192.168.1.100</td>
+              <td>北京</td>
+              <td>Chrome 138</td>
+              <td><span class="tag tag-active">成功</span></td>
+            </tr>
+            <tr>
+              <td>2025-07-22 09:15:00</td>
+              <td>192.168.1.100</td>
+              <td>北京</td>
+              <td>Chrome 138</td>
+              <td><span class="tag tag-active">成功</span></td>
+            </tr>
+            <tr>
+              <td>2025-07-21 22:45:00</td>
+              <td>114.114.114.114</td>
+              <td>上海</td>
+              <td>Safari 18</td>
+              <td><span class="tag tag-active">成功</span></td>
+            </tr>
+            <tr>
+              <td>2025-07-21 18:20:00</td>
+              <td>202.108.22.5</td>
+              <td>深圳</td>
+              <td>Firefox 139</td>
+              <td><span class="tag tag-failed">失败</span></td>
+            </tr>
+            <tr>
+              <td>2025-07-21 18:18:00</td>
+              <td>202.108.22.5</td>
+              <td>深圳</td>
+              <td>Firefox 139</td>
+              <td><span class="tag tag-active">成功</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSub(el) {
+  const sub = el.nextElementSibling;
+  const arrow = el.querySelector('.arrow');
+  if (sub) {
+    sub.classList.toggle('open');
+    arrow.classList.toggle('open');
+  }
+}
+</script>
+</body>
+</html>

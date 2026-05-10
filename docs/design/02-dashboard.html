@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户管理系统 - 用户列表</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; color: rgba(0,0,0,.85); background: #f0f2f5; min-height: 100vh; }
+
+  /* ========== 左侧导航 ========== */
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: #001529; z-index: 100; display: flex; flex-direction: column; }
+  .sidebar-logo { height: 48px; display: flex; align-items: center; padding: 0 16px; gap: 10px; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .sidebar-logo .icon { width: 28px; height: 28px; border-radius: 6px; background: linear-gradient(135deg, #1890ff, #36cfc9); display: flex; align-items: center; justify-content: center; }
+  .sidebar-logo .icon svg { width: 18px; height: 18px; fill: #fff; }
+  .sidebar-logo .text { color: #fff; font-size: 16px; font-weight: 600; letter-spacing: .5px; }
+  .sidebar-menu { flex: 1; padding: 8px 0; overflow-y: auto; }
+  .menu-group-title { color: rgba(255,255,255,.35); font-size: 12px; padding: 16px 16px 4px; text-transform: uppercase; letter-spacing: 1px; }
+  .menu-item { display: flex; align-items: center; padding: 0 16px; height: 40px; color: rgba(255,255,255,.65); cursor: pointer; gap: 10px; font-size: 14px; transition: all .2s; text-decoration: none; }
+  .menu-item:hover { color: #fff; background: rgba(255,255,255,.06); }
+  .menu-item.active { color: #fff; background: #1890ff; border-radius: 4px; margin: 0 8px; padding: 0 8px; }
+  .menu-item svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
+  .menu-item .arrow { margin-left: auto; width: 12px; height: 12px; transition: transform .2s; }
+  .menu-item .arrow.open { transform: rotate(90deg); }
+  .menu-sub { display: none; }
+  .menu-sub.open { display: block; }
+  .menu-sub .menu-item { padding-left: 42px; font-size: 13px; }
+  .menu-sub .menu-item.active { margin-left: 8px; padding-left: 34px; }
+
+  /* ========== 主体区域 ========== */
+  .main { margin-left: 220px; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* 顶部栏 */
+  .topbar { height: 48px; background: #fff; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 50; }
+  .topbar-left { display: flex; align-items: center; gap: 8px; }
+  .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 14px; color: rgba(0,0,0,.45); }
+  .breadcrumb span { color: rgba(0,0,0,.85); font-weight: 500; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .topbar-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; color: rgba(0,0,0,.65); position: relative; transition: background .2s; }
+  .topbar-icon:hover { background: #f5f5f5; }
+  .topbar-icon svg { width: 18px; height: 18px; fill: currentColor; }
+  .badge { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: #ff4d4f; border: 1px solid #fff; }
+  .avatar-group { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background .2s; }
+  .avatar-group:hover { background: #f5f5f5; }
+  .avatar-group img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+  .avatar-group .name { font-size: 14px; color: rgba(0,0,0,.85); }
+
+  /* 内容区 */
+  .content { flex: 1; padding: 24px; }
+  .page-title { font-size: 20px; font-weight: 600; margin-bottom: 16px; color: rgba(0,0,0,.85); }
+
+  /* ========== 统计卡片 ========== */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,.06); display: flex; align-items: center; gap: 16px; }
+  .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .stat-icon svg { width: 24px; height: 24px; fill: #fff; }
+  .stat-icon.blue { background: linear-gradient(135deg, #1890ff, #69c0ff); }
+  .stat-icon.green { background: linear-gradient(135deg, #52c41a, #95de64); }
+  .stat-icon.orange { background: linear-gradient(135deg, #faad14, #ffc53d); }
+  .stat-icon.red { background: linear-gradient(135deg, #ff4d4f, #ff7875); }
+  .stat-info .stat-value { font-size: 24px; font-weight: 600; color: rgba(0,0,0,.85); line-height: 1.2; }
+  .stat-info .stat-label { font-size: 13px; color: rgba(0,0,0,.45); margin-top: 4px; }
+
+  /* ========== 用户列表卡片 ========== */
+  .card { background: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.06); margin-bottom: 24px; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; }
+  .card-title { font-size: 16px; font-weight: 600; color: rgba(0,0,0,.85); }
+
+  /* 筛选栏 */
+  .filter-bar { padding: 16px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .filter-bar .right { margin-left: auto; }
+  .input, .select { height: 32px; border: 1px solid #d9d9d9; border-radius: 4px; padding: 0 12px; font-size: 14px; color: rgba(0,0,0,.85); outline: none; transition: border .2s; background: #fff; }
+  .input:focus, .select:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,.1); }
+  .input::placeholder { color: #bfbfbf; }
+  .input-search { width: 200px; }
+  .select { width: 140px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23999' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 28px; cursor: pointer; }
+
+  /* 按钮 */
+  .btn { height: 32px; padding: 0 16px; border-radius: 4px; font-size: 14px; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all .2s; white-space: nowrap; }
+  .btn-primary { background: #1890ff; color: #fff; border-color: #1890ff; }
+  .btn-primary:hover { background: #40a9ff; border-color: #40a9ff; }
+  .btn-default { background: #fff; color: rgba(0,0,0,.85); border-color: #d9d9d9; }
+  .btn-default:hover { color: #1890ff; border-color: #1890ff; }
+  .btn-danger { color: #ff4d4f; }
+  .btn-danger:hover { color: #ff7875; }
+  .btn-link { background: none; border: none; color: #1890ff; padding: 0 8px; height: auto; }
+  .btn-link:hover { color: #40a9ff; }
+  .btn-link.danger { color: #ff4d4f; }
+  .btn-link.danger:hover { color: #ff7875; }
+
+  /* 表格 */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 12px 16px; font-size: 13px; font-weight: 500; color: rgba(0,0,0,.85); background: #fafafa; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+  td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+  tr:hover td { background: #fafafa; }
+  .user-cell { display: flex; align-items: center; gap: 10px; }
+  .user-cell img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+  .user-cell .uname { font-weight: 500; color: rgba(0,0,0,.85); }
+  .user-cell .uid { font-size: 12px; color: rgba(0,0,0,.45); }
+
+  /* 标签 */
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; line-height: 20px; }
+  .tag-admin { background: #f0f5ff; color: #2f54eb; border: 1px solid #adc6ff; }
+  .tag-editor { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+  .tag-user { background: #fff7e6; color: #d46b08; border: 1px solid #ffd591; }
+  .tag-viewer { background: #f9f0ff; color: #531dab; border: 1px solid #d3adf7; }
+  .tag-active { background: #f6ffed; color: #52c41a; }
+  .tag-disabled { background: #fff1f0; color: #ff4d4f; }
+
+  /* 分页 */
+  .pagination { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; }
+  .pagination .info { font-size: 13px; color: rgba(0,0,0,.45); }
+  .pagination .pages { display: flex; align-items: center; gap: 4px; }
+  .page-btn { min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; cursor: pointer; background: #fff; color: rgba(0,0,0,.85); transition: all .2s; }
+  .page-btn:hover { color: #1890ff; border-color: #1890ff; }
+  .page-btn.active { background: #1890ff; color: #fff; border-color: #1890ff; }
+  .page-btn.disabled { color: rgba(0,0,0,.25); cursor: not-allowed; }
+  .pagination .page-size-select { margin-left: 12px; font-size: 13px; color: rgba(0,0,0,.45); }
+  .pagination .page-size-select .select { width: 80px; height: 28px; font-size: 13px; }
+
+  /* ========== 模态框 ========== */
+  .modal-mask { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-mask.show { display: flex; }
+  .modal { background: #fff; border-radius: 8px; width: 480px; max-width: 90vw; box-shadow: 0 6px 16px rgba(0,0,0,.12); animation: modalIn .2s; }
+  @keyframes modalIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; }
+  .modal-title { font-size: 16px; font-weight: 600; color: rgba(0,0,0,.85); }
+  .modal-close { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; background: none; cursor: pointer; border-radius: 4px; color: rgba(0,0,0,.45); font-size: 18px; }
+  .modal-close:hover { background: #f5f5f5; color: rgba(0,0,0,.85); }
+  .modal-body { padding: 24px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 24px; border-top: 1px solid #f0f0f0; }
+  .modal-footer .btn { min-width: 80px; }
+
+  /* 表单 */
+  .form-item { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 14px; color: rgba(0,0,0,.85); margin-bottom: 8px; }
+  .form-label .required { color: #ff4d4f; margin-right: 4px; }
+  .form-item .input, .form-item .select { width: 100%; height: 36px; }
+  .switch { position: relative; width: 44px; height: 22px; display: inline-block; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider { position: absolute; inset: 0; background: #ccc; border-radius: 22px; cursor: pointer; transition: .2s; }
+  .switch .slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  .switch input:checked + .slider { background: #1890ff; }
+  .switch input:checked + .slider::before { transform: translateX(22px); }
+
+  /* 复选框 */
+  .checkbox { width: 16px; height: 16px; border: 1px solid #d9d9d9; border-radius: 2px; cursor: pointer; appearance: none; background: #fff; position: relative; transition: all .2s; }
+  .checkbox:checked { background: #1890ff; border-color: #1890ff; }
+  .checkbox:checked::after { content: ''; position: absolute; left: 4px; top: 1px; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+
+<!-- ========== 左侧导航 ========== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    <span class="text">用户管理系统</span>
+  </div>
+  <nav class="sidebar-menu">
+    <div class="menu-group-title">主菜单</div>
+    <a class="menu-item" href="#">
+      <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      仪表盘
+    </a>
+
+    <div class="menu-group-title">用户管理</div>
+    <a class="menu-item" onclick="toggleSub(this)">
+      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      用户管理
+      <svg class="arrow open" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+    </a>
+    <div class="menu-sub open">
+      <a class="menu-item active" href="#">用户列表</a>
+      <a class="menu-item" href="#">角色管理</a>
+    </div>
+
+    <div class="menu-group-title">系统管理</div>
+    <a class="menu-item" onclick="toggleSub(this)">
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg>
+      系统管理
+      <svg class="arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+    </a>
+    <div class="menu-sub">
+      <a class="menu-item" href="#">操作日志</a>
+      <a class="menu-item" href="#">系统设置</a>
+    </div>
+
+    <div class="menu-group-title">个人</div>
+    <a class="menu-item" href="#">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      个人中心
+    </a>
+  </nav>
+</aside>
+
+<!-- ========== 主体 ========== -->
+<div class="main">
+  <!-- 顶部栏 -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">
+        用户管理 / <span>用户列表</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        <span class="badge"></span>
+      </div>
+      <div class="avatar-group">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Crect width='28' height='28' rx='14' fill='%231890ff'/%3E%3Ctext x='14' y='18' text-anchor='manager' font-size='14' fill='white'%3E管%3C/text%3E%3C/svg%3E" alt="头像">
+        <span class="name">管理员</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 内容区 -->
+  <div class="content">
+    <h1 class="page-title">用户列表</h1>
+
+    <!-- 统计卡片 -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-icon blue">
+          <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value">1,286</div>
+          <div class="stat-label">总用户数</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value">1,102</div>
+          <div class="stat-label">活跃用户</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">
+          <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value">+48</div>
+          <div class="stat-label">新增用户（本月）</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v-2h-2v2zm0-4h2V7h-2v6z"/></svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value">184</div>
+          <div class="stat-label">禁用用户</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 用户列表卡片 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">用户列表</span>
+      </div>
+      <!-- 筛选栏 -->
+      <div class="filter-bar">
+        <input type="text" class="input input-search" placeholder="搜索用户名 / 手机号">
+        <select class="select">
+          <option>全部状态</option>
+          <option>正常</option>
+          <option>禁用</option>
+        </select>
+        <select class="select">
+          <option>全部角色</option>
+          <option>管理员</option>
+          <option>编辑</option>
+          <option>普通用户</option>
+          <option>访客</option>
+        </select>
+        <button class="btn btn-primary">
+          <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          搜索
+        </button>
+        <button class="btn btn-default">重置</button>
+        <div class="right">
+          <button class="btn btn-primary" onclick="document.getElementById('userModal').classList.add('show')">
+            <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            新增用户
+          </button>
+        </div>
+      </div>
+
+      <!-- 表格 -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox" class="checkbox"></th>
+              <th>用户信息</th>
+              <th>手机号</th>
+              <th>角色</th>
+              <th>状态</th>
+              <th>创建时间</th>
+              <th style="width:160px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="checkbox" class="checkbox"></td>
+              <td>
+                <div class="user-cell">
+                  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='16' fill='%231890ff'/%3E%3Ctext x='16' y='20' text-anchor='middle' font-size='14' fill='white'%3E张%3C/text%3E%3C/svg%3E" alt="头像">
+                  <div>
+                    <div class="uname">张明远</div>
+                    <div class="uid">UID: U10001</div>
+                  </div>
+                </div>
+              </td>
+              <td>138****8821</td>
+              <td><span class="tag tag-admin">管理员</span></td>
+              <td><span class="tag tag-active">正常</span></td>
+              <td>2025-03-15 09:30:00</td>
+              <td>
+                <button class="btn-link">编辑</button>
+                <button class="btn-link danger">删除</button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="checkbox"></td>
+              <td>
+                <div class="user-cell">
+                  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='16' fill='%2352c41a'/%3E%3Ctext x='16' y='20' text-anchor='middle' font-size='14' fill='white'%3E李%3C/text%3E%3C/svg%3E" alt="头像">
+                  <div>
+                    <div class="uname">李晓婷</div>
+                    <div class="uid">UID: U10002</div>
+                  </div>
+                </div>
+              </td>
+              <td>139****6642</td>
+              <td><span class="tag tag-editor">编辑</span></td>
+              <td><span class="tag tag-active">正常</span></td>
+              <td>2025-04-02 14:22:00</td>
+              <td>
+                <button class="btn-link">编辑</button>
+                <button class="btn-link danger">删除</button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="checkbox"></td>
+              <td>
+                <div class="user-cell">
+                  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='16' fill='%23faad14'/%3E%3Ctext x='16' y='20' text-anchor='middle' font-size='14' fill='white'%3E王%3C/text%3E%3C/svg%3E" alt="头像">
+                  <div>
+                    <div class="uname">王建国</div>
+                    <div class="uid">UID: U10003</div>
+                  </div>
+                </div>
+              </td>
+              <td>137****3315</td>
+              <td><span class="tag tag-user">普通用户</span></td>
+              <td><span class="tag tag-active">正常</span></td>
+              <td>2025-05-10 10:05:00</td>
+              <td>
+                <button class="btn-link">编辑</button>
+                <button class="btn-link danger">删除</button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="checkbox"></td>
+              <td>
+                <div class="user-cell">
+                  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='16' fill='%23722ed1'/%3E%3Ctext x='16' y='20' text-anchor='middle' font-size='14' fill='white'%3E赵%3C/text%3E%3C/svg%3E" alt="头像">
+                  <div>
+                    <div class="uname">赵雪梅</div>
+                    <div class="uid">UID: U10004</div>
+                  </div>
+                </div>
+              </td>
+              <td>136****9970</td>
+              <td><span class="tag tag-viewer">访客</span></td>
+              <td><span class="tag tag-disabled">禁用</span></td>
+              <td>2025-01-20 16:40:00</td>
+              <td>
+                <button class="btn-link">编辑</button>
+                <button class="btn-link">启用</button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="checkbox"></td>
+              <td>
+                <div class="user-cell">
+                  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='16' fill='%2313c2c2'/%3E%3Ctext x='16' y='20' text-anchor='middle' font-size='14' fill='white'%3E陈%3C/text%3E%3C/svg%3E" alt="头像">
+                  <div>
+                    <div class="uname">陈浩然</div>
+                    <div class="uid">UID: U10005</div>
+                  </div>
+                </div>
+              </td>
+              <td>158****5528</td>
+              <td><span class="tag tag-editor">编辑</span></td>
+              <td><span class="tag tag-active">正常</span></td>
+              <td>2025-06-18 11:15:00</td>
+              <td>
+                <button class="btn-link">编辑</button>
+                <button class="btn-link danger">删除</button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="checkbox"></td>
+              <td>
+                <div class="user-cell">
+                  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='16' fill='%23eb2f96'/%3E%3Ctext x='16' y='20' text-anchor='middle' font-size='14' fill='white'%3E刘%3C/text%3E%3C/svg%3E" alt="头像">
+                  <div>
+                    <div class="uname">刘思琪</div>
+                    <div class="uid">UID: U10006</div>
+                  </div>
+                </div>
+              </td>
+              <td>150****7743</td>
+              <td><span class="tag tag-user">普通用户</span></td>
+              <td><span class="tag tag-active">正常</span></td>
+              <td>2025-07-22 08:50:00</td>
+              <td>
+                <button class="btn-link">编辑</button>
+                <button class="btn-link danger">删除</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 分页 -->
+      <div class="pagination">
+        <div class="info">共 <strong>1286</strong> 条</div>
+        <div class="pages">
+          <button class="page-btn disabled">‹</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">4</button>
+          <button class="page-btn">5</button>
+          <button class="page-btn">...</button>
+          <button class="page-btn">129</button>
+          <button class="page-btn">›</button>
+          <span class="page-size-select">
+            每页
+            <select class="select">
+              <option>10 条</option>
+              <option>20 条</option>
+              <option>50 条</option>
+            </select>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 新增/编辑用户 模态框 ========== -->
+<div class="modal-mask" id="userModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">新增用户</h3>
+      <button class="modal-close" onclick="this.closest('.modal-mask').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label"><span class="required">*</span>用户名</label>
+        <input type="text" class="input" placeholder="请输入用户名">
+      </div>
+      <div class="form-item">
+        <label class="form-label"><span class="required">*</span>昵称</label>
+        <input type="text" class="input" placeholder="请输入昵称">
+      </div>
+      <div class="form-item">
+        <label class="form-label"><span class="required">*</span>手机号</label>
+        <input type="text" class="input" placeholder="请输入手机号">
+      </div>
+      <div class="form-item">
+        <label class="form-label"><span class="required">*</span>角色</label>
+        <select class="select" style="width:100%">
+          <option>请选择角色</option>
+          <option>管理员</option>
+          <option>编辑</option>
+          <option>普通用户</option>
+          <option>访客</option>
+        </select>
+      </div>
+      <div class="form-item" style="display:flex;align-items:center;justify-content:space-between">
+        <label class="form-label" style="margin-bottom:0">状态</label>
+        <label class="switch">
+          <input type="checkbox" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="this.closest('.modal-mask').classList.remove('show')">取消</button>
+      <button class="btn btn-primary">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSub(el) {
+  const sub = el.nextElementSibling;
+  const arrow = el.querySelector('.arrow');
+  if (sub) {
+    sub.classList.toggle('open');
+    arrow.classList.toggle('open');
+  }
+}
+// 点击模态框遮罩关闭
+document.getElementById('userModal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('show');
+});
+</script>
+</body>
+</html>

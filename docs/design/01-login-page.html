@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户管理系统 - 登录</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #141414;
+  }
+  .login-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    width: 420px;
+    padding: 48px 40px;
+    position: relative;
+  }
+  .login-logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .login-logo .logo-icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, #1890ff, #36cfc9);
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .login-logo h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #141414;
+    letter-spacing: 1px;
+  }
+  .login-logo p {
+    font-size: 13px;
+    color: #8c8c8c;
+    margin-top: 4px;
+  }
+  .tab-group {
+    display: flex;
+    border-bottom: 2px solid #f0f0f0;
+    margin-bottom: 28px;
+  }
+  .tab-item {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 15px;
+    color: #8c8c8c;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+  }
+  .tab-item.active {
+    color: #1890ff;
+    font-weight: 600;
+  }
+  .tab-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0; right: 0;
+    height: 2px;
+    background: #1890ff;
+    border-radius: 1px;
+  }
+  .form-group {
+    margin-bottom: 20px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 14px;
+    color: #595959;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .input-wrapper {
+    position: relative;
+  }
+  .input-wrapper input {
+    width: 100%;
+    height: 40px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    padding: 0 12px;
+    font-size: 14px;
+    color: #141414;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-wrapper input:focus {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24,144,255,0.1);
+  }
+  .input-wrapper input::placeholder {
+    color: #bfbfbf;
+  }
+  .input-with-btn {
+    display: flex;
+    gap: 8px;
+  }
+  .input-with-btn input {
+    flex: 1;
+  }
+  .btn-code {
+    width: 100px;
+    height: 40px;
+    background: #1890ff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    font-size: 13px;
+  }
+  .form-options label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #595959;
+    cursor: pointer;
+  }
+  .form-options a {
+    color: #1890ff;
+    text-decoration: none;
+  }
+  .btn-primary {
+    width: 100%;
+    height: 44px;
+    background: #1890ff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: background 0.2s;
+  }
+  .btn-primary:hover { background: #40a9ff; }
+  .btn-primary:active { background: #096dd9; }
+  .login-footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 13px;
+    color: #8c8c8c;
+  }
+  .login-footer a {
+    color: #1890ff;
+    text-decoration: none;
+    margin-left: 4px;
+  }
+  .captcha-row {
+    display: flex;
+    gap: 8px;
+  }
+  .captcha-row input { flex: 1; }
+  .captcha-img {
+    width: 110px; height: 40px;
+    background: linear-gradient(135deg, #f0f0f0, #e8e8e8);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8c8c8c;
+    font-size: 18px;
+    letter-spacing: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  /* 忘记密码面板 */
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #1890ff;
+    font-size: 13px;
+    margin-bottom: 20px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <!-- 登录面板 -->
+  <div class="panel active" id="panelLogin">
+    <div class="login-logo">
+      <div class="logo-icon">U</div>
+      <h1>用户管理系统</h1>
+      <p>User Management System</p>
+    </div>
+
+    <div class="tab-group">
+      <div class="tab-item active" onclick="switchTab('sms')">验证码登录</div>
+      <div class="tab-item" onclick="switchTab('password')">密码登录</div>
+    </div>
+
+    <!-- 验证码登录 -->
+    <div id="tabSms">
+      <div class="form-group">
+        <label>手机号码</label>
+        <input type="tel" placeholder="请输入手机号" maxlength="11">
+      </div>
+      <div class="form-group">
+        <label>验证码</label>
+        <div class="input-with-btn">
+          <input type="text" placeholder="请输入验证码" maxlength="6">
+          <button class="btn-code">获取验证码</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 密码登录 -->
+    <div id="tabPassword" style="display:none">
+      <div class="form-group">
+        <label>账号/手机号</label>
+        <input type="text" placeholder="请输入账号或手机号">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" placeholder="请输入密码">
+      </div>
+      <div class="form-group">
+        <label>验证码</label>
+        <div class="captcha-row">
+          <input type="text" placeholder="请输入验证码" maxlength="4">
+          <div class="captcha-img">A7kP</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-options">
+      <label><input type="checkbox"> 记住登录状态</label>
+      <a href="#" onclick="showPanel('panelForgot')">忘记密码？</a>
+    </div>
+
+    <button class="btn-primary">登 录</button>
+
+    <div class="login-footer">
+      还没有账号？<a href="#" onclick="showPanel('panelRegister')">立即注册</a>
+    </div>
+  </div>
+
+  <!-- 注册面板 -->
+  <div class="panel" id="panelRegister">
+    <div class="login-logo">
+      <div class="logo-icon">U</div>
+      <h1>注册账号</h1>
+      <p>创建您的管理账号</p>
+    </div>
+    <div class="form-group">
+      <label>手机号码</label>
+      <input type="tel" placeholder="请输入手机号" maxlength="11">
+    </div>
+    <div class="form-group">
+      <label>验证码</label>
+      <div class="input-with-btn">
+        <input type="text" placeholder="请输入验证码" maxlength="6">
+        <button class="btn-code">获取验证码</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>设置密码</label>
+      <input type="password" placeholder="6-20位，包含字母和数字">
+    </div>
+    <div class="form-group">
+      <label>确认密码</label>
+      <input type="password" placeholder="请再次输入密码">
+    </div>
+    <button class="btn-primary" style="margin-top:8px">注 册</button>
+    <div class="login-footer">
+      已有账号？<a href="#" onclick="showPanel('panelLogin')">返回登录</a>
+    </div>
+  </div>
+
+  <!-- 忘记密码面板 -->
+  <div class="panel" id="panelForgot">
+    <div class="back-link" onclick="showPanel('panelLogin')">← 返回登录</div>
+    <div class="login-logo">
+      <div class="logo-icon">U</div>
+      <h1>找回密码</h1>
+      <p>通过手机验证码重置密码</p>
+    </div>
+    <div class="form-group">
+      <label>注册手机号</label>
+      <input type="tel" placeholder="请输入注册时的手机号" maxlength="11">
+    </div>
+    <div class="form-group">
+      <label>验证码</label>
+      <div class="input-with-btn">
+        <input type="text" placeholder="请输入验证码" maxlength="6">
+        <button class="btn-code">获取验证码</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>新密码</label>
+      <input type="password" placeholder="6-20位，包含字母和数字">
+    </div>
+    <div class="form-group">
+      <label>确认新密码</label>
+      <input type="password" placeholder="请再次输入新密码">
+    </div>
+    <button class="btn-primary">确认重置</button>
+  </div>
+</div>
+
+<script>
+function switchTab(type) {
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  if(type === 'sms') {
+    document.querySelectorAll('.tab-item')[0].classList.add('active');
+    document.getElementById('tabSms').style.display = 'block';
+    document.getElementById('tabPassword').style.display = 'none';
+  } else {
+    document.querySelectorAll('.tab-item')[1].classList.add('active');
+    document.getElementById('tabSms').style.display = 'none';
+    document.getElementById('tabPassword').style.display = 'block';
+  }
+}
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
